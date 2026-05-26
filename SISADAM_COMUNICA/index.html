@@ -102,7 +102,7 @@
         // Função que manda o dado para o servidor local do condomínio
         async function enviarTokenParaServidor(bloco, apto, token) {
             // Este endereço será a nossa futura API em Python
-            const url_do_seu_servidor = "http://127.0.0.1:5000/salvar-token"; 
+            const url_do_seu_servidor = "https://sisadam-api.onrender.com/salvar-token"; 
             
             await fetch(url_do_seu_servidor, {
                 method: "POST",
