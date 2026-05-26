@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISADAM COMUNICA</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f4; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 300px; margin: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        .logo-text { color: #F57C00; font-weight: bold; font-size: 24px; margin-bottom: 5px; }
+        .sub-text { color: #555; font-size: 14px; margin-bottom: 20px; }
+        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background-color: #F57C00; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; font-size: 16px; }
+        button:hover { background-color: #E65100; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="logo-text">SISADAM COMUNICA</div>
+        <div class="sub-text">Receba avisos da portaria direto no seu celular!</div>
+        
+        <select id="bloco">
+            <option value="BLOCO A">BLOCO A</option>
+            <option value="BLOCO B">BLOCO B</option>
+        </select>
+        
+        <input type="text" id="apto" placeholder="Número do Apartamento (ex: 12)">
+        
+        <button id="btn-ativar">🔔 Ativar Notificações</button>
+        <p id="status" style="color: gray; font-size: 13px; margin-top: 15px; font-weight: bold;"></p>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+    <script>
+        // =====================================================================
+        // ATENÇÃO: APAGUE O BLOCO ABAIXO E COLE O SEU FIREBASE CONFIG REAL AQUI
+        // =====================================================================
+        const firebaseConfig = {
+              apiKey: "AIzaSyCB13_Bhe2fzb059vT9mP1U-JUi5-5d7Z0",
+              authDomain: "sisadam-comunica.firebaseapp.com",
+              projectId: "sisadam-comunica",
+              storageBucket: "sisadam-comunica.firebasestorage.app",
+              messagingSenderId: "471948621207",
+              appId: "1:471948621207:web:ca9d66c6ae1a94468540d2",
+              measurementId: "G-GMX6ZK4182"
+        };
+        // =====================================================================
+
+        // =====================================================================
+        // ATENÇÃO: APAGUE O TEXTO ABAIXO E COLE A SUA CHAVE VAPID REAL
+        // =====================================================================
+        const CHAVE_VAPID = "BKRAQREQqAucfSJmZUiYxfRJ6chN_0P2gernrHKT4ChDTdKKg7vpDqBGxdW8ZehpBKNc_h8K0MDhiH6BnqjPG-k";
+        // =====================================================================
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const messaging = firebase.messaging();
+
+        document.getElementById('btn-ativar').addEventListener('click', async () => {
+            const bloco = document.getElementById('bloco').value;
+            const apto = document.getElementById('apto').value;
+            const statusText = document.getElementById('status');
+
+            if(!apto) {
+                alert("Por favor, digite o número do seu apartamento!");
+                return;
+            }
+
+            try {
+                statusText.innerText = "Solicitando permissão ao celular...";
+                
+                // Pede a permissão na tela do celular
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    statusText.innerText = "Gerando conexão segura...";
+                    
+                    // Pega o Token do Google
+                    const token = await messaging.getToken({ vapidKey: CHAVE_VAPID });
+                    
+                    if (token) {
+                        statusText.innerText = "Enviando dados para a portaria...";
+                        
+                        // Envia o Token para o SISADAM
+                        await enviarTokenParaServidor(bloco, apto, token);
+                        statusText.innerText = "✅ Tudo pronto! O SISADAM COMUNICA está ativo no seu celular.";
+                        statusText.style.color = "#388E3C";
+                    }
+                } else {
+                    statusText.innerText = "❌ Permissão de notificação negada.";
+                    statusText.style.color = "#D32F2F";
+                }
+            } catch (error) {
+                console.error(error);
+                statusText.innerText = "Erro ao configurar a comunicação.";
+                statusText.style.color = "#D32F2F";
+            }
+        });
+
+        // Função que manda o dado para o servidor local do condomínio
+        async function enviarTokenParaServidor(bloco, apto, token) {
+            // Este endereço será a nossa futura API em Python
+            const url_do_seu_servidor = "http://127.0.0.1:5000/salvar-token"; 
+            
+            await fetch(url_do_seu_servidor, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ bloco: bloco, apartamento: apto, token: token })
+            });
+        }
+    </script>
+</body>
+</html>
